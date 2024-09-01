@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiang.xiangke.mapper.ArticleFavoriteMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiang.xiangke.model.entity.ArticleFavorite">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="articleId" column="articleId" jdbcType="BIGINT"/>
+            <result property="userId" column="userId" jdbcType="BIGINT"/>
+            <result property="createdTime" column="createdTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,articleId,userId,
+        createdTime
+    </sql>
+
+    <select id="listFavoritePostByPage"
+            resultType="com.xiang.xiangke.model.entity.Article">
+        select a.*
+        from article a
+                 join (select articleId from article_favorite where userId = #{favourUserId}) pf
+                      on a.id = pf.articleId
+    </select>
+</mapper>
