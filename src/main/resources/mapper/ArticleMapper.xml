@@ -17,12 +17,13 @@
             <result property="isDeleted" column="isDeleted" jdbcType="TINYINT"/>
             <result property="favourNum" column="favourNum" jdbcType="INTEGER"/>
             <result property="likeNum" column="likeNum" jdbcType="INTEGER"/>
+            <result property="concise" column="concise" jdbcType="VARCHAR"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id,title,content,
         authorId,category,tags,
         status,createdTime,updatedTime,
-        isDeleted,favourNum,likeNum
+        isDeleted,favourNum,likeNum,concise
     </sql>
 </mapper>

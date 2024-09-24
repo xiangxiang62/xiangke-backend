@@ -9,6 +9,7 @@ import com.xiang.xiangke.exception.BusinessException;
 import com.xiang.xiangke.exception.ThrowUtils;
 //import com.xiang.xiangke.mapper.ArticleFavourMapper;
 import com.xiang.xiangke.mapper.ArticleFavoriteMapper;
+import com.xiang.xiangke.mapper.ArticleLikeMapper;
 import com.xiang.xiangke.mapper.ArticleMapper;
 //import com.xiang.xiangke.mapper.ArticleThumbMapper;
 import com.xiang.xiangke.model.dto.article.ArticleQueryRequest;
@@ -16,6 +17,7 @@ import com.xiang.xiangke.model.entity.Article;
 //import com.xiang.xiangke.model.entity.ArticleFavour;
 //import com.xiang.xiangke.model.entity.ArticleThumb;
 import com.xiang.xiangke.model.entity.ArticleFavorite;
+import com.xiang.xiangke.model.entity.ArticleLike;
 import com.xiang.xiangke.model.entity.User;
 import com.xiang.xiangke.model.vo.ArticleVO;
 import com.xiang.xiangke.model.vo.UserVO;
@@ -44,9 +46,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     @Resource
     private UserService userService;
 
-//    @Resource
-//    private ArticleThumbMapper articleThumbMapper;
-//
+    @Resource
+    private ArticleLikeMapper articleLikeMapper;
+
     @Resource
     private ArticleFavoriteMapper articleFavoriteMapper;
 
@@ -62,7 +64,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         String tags = article.getTags();
         // 创建时，参数不能为空
         if (add) {
-            ThrowUtils.throwIf(StringUtils.isAnyBlank(title, content, tags), ErrorCode.PARAMS_ERROR);
+            ThrowUtils.throwIf(StringUtils.isAnyBlank(title, content), ErrorCode.PARAMS_ERROR);
         }
         // 有参数则校验
         if (StringUtils.isNotBlank(title) && title.length() > 80) {
@@ -85,33 +87,41 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         if (articleQueryRequest == null) {
             return queryWrapper;
         }
-//        String searchText = articleQueryRequest.getSearchText();
+
         String sortField = articleQueryRequest.getSortField();
         String sortOrder = articleQueryRequest.getSortOrder();
         Long id = articleQueryRequest.getId();
         String title = articleQueryRequest.getTitle();
         String content = articleQueryRequest.getContent();
-//        List<String> tagList = Collections.singletonList(articleQueryRequest.getTags());
         Long userId = articleQueryRequest.getAuthorId();
-//        Long notId = articleQueryRequest.getNotId();
+        String category = articleQueryRequest.getCategory();
+
         // 拼接查询条件
-//        if (StringUtils.isNotBlank(searchText)) {
-//            queryWrapper.and(qw -> qw.like("title", searchText).or().like("content", searchText));
-//        }
         queryWrapper.like(StringUtils.isNotBlank(title), "title", title);
         queryWrapper.like(StringUtils.isNotBlank(content), "content", content);
-//        if (CollUtil.isNotEmpty(tagList)) {
-//            for (String tag : tagList) {
-//                queryWrapper.like("tags", "\"" + tag + "\"");
-//            }
-//        }
-//        queryWrapper.ne(ObjectUtils.isNotEmpty(notId), "id", notId);
         queryWrapper.eq(ObjectUtils.isNotEmpty(id), "id", id);
         queryWrapper.eq(ObjectUtils.isNotEmpty(userId), "userId", userId);
-        queryWrapper.orderBy(SqlUtils.validSortField(sortField), sortOrder.equals(CommonConstant.SORT_ORDER_ASC),
-                sortField);
+        queryWrapper.eq(ObjectUtils.isNotEmpty(category), "category", category);
+
+        // 处理排序逻辑
+        if (StringUtils.isNotBlank(sortField)) {
+            // 如果 sortField 是空的或 null，则使用 createdTime 进行默认排序
+            if (sortField.equals("createdTime") && StringUtils.isBlank(sortOrder)) {
+                // 默认倒序
+                queryWrapper.orderByDesc("createdTime");
+            } else {
+                // 使用传入的排序字段和排序顺序
+                boolean isAsc = CommonConstant.SORT_ORDER_ASC.equals(sortOrder);
+                queryWrapper.orderBy(true, isAsc, sortField);
+            }
+        } else {
+            // 如果没有指定排序字段，则使用 createdTime 进行默认排序
+            queryWrapper.orderByDesc("createdTime");
+        }
+
         return queryWrapper;
     }
+
 
 
     @Override
@@ -126,6 +136,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         }
         UserVO userVO = userService.getUserVO(user);
         articleVO.setUser(userVO);
+        articleVO.setCreatedTime(article.getCreatedTime());
         // 2. 已登录，获取用户点赞、收藏状态
         User loginUser = userService.getLoginUserPermitNull(request);
         if (loginUser != null) {
@@ -141,6 +152,14 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             articleFavourQueryWrapper.eq("userId", loginUser.getId());
             ArticleFavorite articleFavour = articleFavoriteMapper.selectOne(articleFavourQueryWrapper);
             articleVO.setStarred(articleFavour != null);
+
+            // 获取点赞
+            QueryWrapper<ArticleLike> articleLikeQueryWrapper = new QueryWrapper<>();
+            articleLikeQueryWrapper.in("articleId", articleId);
+            articleLikeQueryWrapper.eq("userId", loginUser.getId());
+            ArticleLike articleLike = articleLikeMapper.selectOne(articleLikeQueryWrapper);
+            articleVO.setStarred(articleFavour != null);
+            articleVO.setLiked(articleLike != null);
         }
         return articleVO;
     }

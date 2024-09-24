@@ -182,7 +182,7 @@ public class ArticleController {
         Page<Article> articlePage = articleService.page(new Page<>(current, size),
                 articleService.getQueryWrapper(articleQueryRequest));
         Page<Article> page = articleService.page(new Page<>(current, size));
-        return ResultUtils.success(articleService.getArticleVOPage(page, request));
+        return ResultUtils.success(articleService.getArticleVOPage(articlePage, request));
     }
 
     /**

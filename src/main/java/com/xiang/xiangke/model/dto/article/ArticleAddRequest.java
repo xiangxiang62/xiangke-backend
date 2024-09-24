@@ -31,6 +31,11 @@ public class ArticleAddRequest implements Serializable {
     private String category;
 
     /**
+     * 文章简介
+     */
+    private String concise;
+
+    /**
      * 文章标签，多个标签用逗号分隔
      */
     private String tags;

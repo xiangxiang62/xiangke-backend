@@ -67,6 +67,10 @@ public class ArticleVO implements Serializable {
 
     private Boolean starred;
 
+    private Boolean liked;
+
+    private Date createdTime;
+
     /**
      * 包装类转对象
      *

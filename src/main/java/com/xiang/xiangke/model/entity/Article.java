@@ -37,6 +37,11 @@ public class Article implements Serializable {
     private Long authorId;
 
     /**
+     * 文章简介
+     */
+    private String concise;
+
+    /**
      * 文章分类
      */
     private String category;
